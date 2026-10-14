@@ -1,0 +1,12 @@
+
+import mongoose from "mongoose";
+
+main().catch(err => console.log(err));
+
+async function main() {
+  await mongoose.connect('mongodb+srv://maheenzuhra_db_user:IGq1uTzHUQ0tYiEM@postapp.f2rxqhm.mongodb.net');
+console.log("db succefully");
+
+  }
+
+  export default main;
