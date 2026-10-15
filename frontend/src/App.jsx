@@ -1,27 +1,49 @@
-import { useState } from "react";
-import "./App.css";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 function App() {
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
+  const [desc, setDesc] = useState("");
   const [post, setPost] = useState([]);
   const [image, setImage] = useState("");
+
+  useEffect(() => {
+    axios
+      .get("/api/posts")
+      .then((response) => {
+        console.log(response.data.post);
+        setPost(response.data.post);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  }, []);
 
   function submitHandler(e) {
     e.preventDefault();
 
-    if (!title.trim() || !description.trim()) return;
+    if (!title.trim() || !desc.trim()) return;
 
-    const newPost = {
-      title,
-      description,
-      image,
-    };
+    axios
+      .post("/api/posts")
+      .then((response) => {
+        console.log(response);
+        setPost(response.data.post);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
 
-    setPost((prev) => [...prev, newPost]);
+    // const newPost = {
+    //   title,
+    //   desc,
+    //   image,
+    // };
+
+    // setPost((prev) => [...prev, newPost]);
 
     setTitle("");
-    setDescription("");
+    setDesc("");
     setImage("");
   }
 
@@ -33,7 +55,7 @@ function App() {
     const selectedPost = post[index];
 
     setTitle(selectedPost.title);
-    setDescription(selectedPost.description);
+    setDesc(selectedPost.desc);
     setImage(selectedPost.image || "");
 
     setPost((prev) => prev.filter((_, i) => i !== index));
@@ -95,8 +117,8 @@ function App() {
               <textarea
                 rows="4"
                 placeholder="Enter post description..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                value={desc}
+                onChange={(e) => setDesc(e.target.value)}
                 className="w-full px-3 py-2 bg-white/80 border border-[#F3B0C3] rounded-sm focus:ring-2 focus:ring-[#FFB6C1] focus:outline-none resize-none"
               ></textarea>
             </div>
@@ -181,7 +203,7 @@ function App() {
                     {item.title}
                   </h1>
                   <p className="text-sm text-[#7D5347] mt-2 whitespace-pre-wrap break-words leading-relaxed">
-                    {item.description}
+                    {item.desc}
                   </p>
                 </div>
 
