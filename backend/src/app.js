@@ -72,26 +72,19 @@ app.delete("/api/posts/:id", async (req, res) => {
     });
   }
 });
-app.put("/api/posts/:id",upload.single("image"), async (req, res) => {
+app.put("/api/posts/:id", upload.single("image"), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({
-        message: "Please select an image",
-      });
-    }
     const { id } = req.params;
     const { title, desc } = req.body;
-    const image = req.file.buffer;
-    const imageurl = await uploadFile(image);
+    const updateData = { title, desc };
 
-    const post = await postModel.findByIdAndUpdate(
-      id,
-      { title, desc ,
-        image: imageurl.url
+    if (req.file) {
+      const image = req.file.buffer;
+      const imageurl = await uploadFile(image);
+      updateData.image = imageurl.url;
+    }
 
-      },
-      
-    );
+    const post = await postModel.findByIdAndUpdate(id, updateData);
 
     if (!post) {
       return res.status(404).json({ message: "Post not found" });
