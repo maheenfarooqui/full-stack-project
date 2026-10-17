@@ -25,13 +25,10 @@ function App() {
     if (!title.trim() || !desc.trim()) return;
 
     const formData = new FormData(e.target);
-    const data = {
-      title: formData.get("title"),
-      desc: formData.get("desc"),
-    };
+  
     try {
       if (editId) {
-        const response = await axios.put(`/api/posts/${editId}`, data);
+        const response = await axios.put(`/api/posts/${editId}`, formData);
 
         setPost((prev) => [...prev, response.data.post]);
         setEditId(null);
@@ -39,14 +36,15 @@ function App() {
         const response = await axios.post("/api/posts", formData);
         setPost((prev) => [...prev, response.data.post]);
 
-        setTitle("");
-        setDesc("");
-        setImage("");
-        e.target.reset();
+        
       }
     } catch (error) {
       console.log("Error:", error.response?.data || error.message);
     }
+    setTitle("");
+        setDesc("");
+        setImage("");
+        e.target.reset();
   }
 
   async function delHandler(id) {
