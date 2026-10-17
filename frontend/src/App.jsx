@@ -6,12 +6,12 @@ function App() {
   const [desc, setDesc] = useState("");
   const [post, setPost] = useState([]);
   const [image, setImage] = useState("");
+  const [editId, setEditId] = useState(null);
 
   useEffect(() => {
     axios
       .get("/api/posts")
       .then((response) => {
-        console.log(response.data.post);
         setPost(response.data.post);
       })
       .catch((error) => {
@@ -19,46 +19,53 @@ function App() {
       });
   }, []);
 
-  function submitHandler(e) {
+  async function submitHandler(e) {
     e.preventDefault();
 
     if (!title.trim() || !desc.trim()) return;
 
-    axios
-      .post("/api/posts")
-      .then((response) => {
-        console.log(response);
-        setPost(response.data.post);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
+    const formData = new FormData(e.target);
+    const data = {
+      title: formData.get("title"),
+      desc: formData.get("desc"),
+    };
+    try {
+      if (editId) {
+        const response = await axios.put(`/api/posts/${editId}`, data);
 
-    // const newPost = {
-    //   title,
-    //   desc,
-    //   image,
-    // };
+        setPost((prev) => [...prev, response.data.post]);
+        setEditId(null);
+      } else {
+        const response = await axios.post("/api/posts", formData);
+        setPost((prev) => [...prev, response.data.post]);
 
-    // setPost((prev) => [...prev, newPost]);
-
-    setTitle("");
-    setDesc("");
-    setImage("");
+        setTitle("");
+        setDesc("");
+        setImage("");
+        e.target.reset();
+      }
+    } catch (error) {
+      console.log("Error:", error.response?.data || error.message);
+    }
   }
 
-  function delHandler(index) {
-    setPost((prev) => prev.filter((_, i) => i !== index));
+  async function delHandler(id) {
+    try {
+      const response = await axios.delete(`/api/posts/${id}`);
+      console.log(response);
+    } catch (error) {
+      console.log("Error:", error.response?.data || error.message);
+    }
+    setPost((prev) => prev.filter((item) => item._id !== id));
   }
 
-  function editHandler(index) {
-    const selectedPost = post[index];
+  async function editHandler(item) {
+    setEditId(item._id);
+    setTitle(item.title);
+    setDesc(item.desc);
+    setImage(item.image || "");
 
-    setTitle(selectedPost.title);
-    setDesc(selectedPost.desc);
-    setImage(selectedPost.image || "");
-
-    setPost((prev) => prev.filter((_, i) => i !== index));
+    setPost((prev) => prev.filter((post) => post._id !== item._id));
   }
 
   return (
@@ -103,6 +110,7 @@ function App() {
               </label>
               <input
                 type="text"
+                name="title"
                 placeholder="Enter post title..."
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -116,6 +124,7 @@ function App() {
               </label>
               <textarea
                 rows="4"
+                name="desc"
                 placeholder="Enter post description..."
                 value={desc}
                 onChange={(e) => setDesc(e.target.value)}
@@ -130,6 +139,7 @@ function App() {
 
               <input
                 type="file"
+                name="image"
                 accept="image/*"
                 onChange={(e) => {
                   const file = e.target.files[0];
@@ -164,16 +174,16 @@ function App() {
               type="submit"
               className="relative overflow-hidden flex-1 bg-gradient-to-r from-[#FFB6C1] to-[#FF94A8] text-white font-bold py-1.5 px-3 rounded-sm transition-all text-xs cursor-pointer before:absolute before:inset-0 before:-translate-x-full hover:before:translate-x-full before:bg-white/30 before:transition-transform before:duration-500"
             >
-              Add To List
+              {editId ? "Update List" : "Add To List"}
             </button>
           </div>
         </form>
 
         {/* Dynamic Cards Layout (3 columns on desktop) */}
         <div className="w-full md:ml-[340px] lg:ml-[380px] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-start">
-          {post.map((item, index) => (
+          {post.map((item) => (
             <div
-              key={index}
+              key={item._id}
               className="group relative overflow-hidden p-5 rounded-sm border border-[#F3B0C3]/70 shadow-md transition-all duration-300 flex flex-col justify-between hover:-translate-y-1.2 hover:scale-[1.02] hover:shadow-xl hover:shadow-[#FFB6C1]/30 hover:border-[#FF85A1]"
             >
               {/* Background Image Layer (With Controlled Opacity) */}
@@ -210,13 +220,13 @@ function App() {
                 <div className="flex items-center gap-2 mt-4 pt-3 border-t border-[#F3B0C3]/50">
                   <button
                     className="relative overflow-hidden flex-1 bg-gradient-to-r from-[#FFB6C1] to-[#FF94A8] text-white font-bold py-1.5 px-3 rounded-sm transition-all text-xs cursor-pointer before:absolute before:inset-0 before:-translate-x-full hover:before:translate-x-full before:bg-white/30 before:transition-transform before:duration-500"
-                    onClick={(e) => editHandler(index)}
+                    onClick={(e) => editHandler(item)}
                   >
                     Edit
                   </button>
                   <button
                     className="relative overflow-hidden flex-1 bg-gradient-to-r from-[#FFB6C1] to-[#FF94A8] text-white font-bold py-1.5 px-3 rounded-sm transition-all text-xs cursor-pointer before:absolute before:inset-0 before:-translate-x-full hover:before:translate-x-full before:bg-white/30 before:transition-transform before:duration-500"
-                    onClick={(e) => delHandler(index)}
+                    onClick={(e) => delHandler(item._id)}
                   >
                     Delete
                   </button>

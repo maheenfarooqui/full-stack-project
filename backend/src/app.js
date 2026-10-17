@@ -18,28 +18,83 @@ app.get("/api/posts", async (req, res) => {
   res.status(200).json({ message: "post fetch", post });
 });
 app.post("/api/posts", upload.single("image"), async (req, res) => {
-  const data = req.body;
-  const image = req.file.buffer;
-  const result = await uploadFile(image);
-  console.log(data, image, result);
-  await postModel.create({
-    title: data.title,
-    desc: data.desc,
-    image: result.url,
-  });
-  res.status(201).json({ message: "post create succefully" });
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        message: "Please select an image",
+      });
+    }
+
+    const { title, desc } = req.body;
+    const image = req.file.buffer;
+
+    const result = await uploadFile(image);
+
+    const post = await postModel.create({
+      title,
+      desc,
+      image: result.url,
+    });
+
+    res.status(201).json({
+      message: "Post created successfully",
+      post,
+    });
+  } catch (error) {
+    console.error("Create post error:", error);
+
+    res.status(500).json({
+      message: "Failed to create post",
+    });
+  }
 });
 app.delete("/api/posts/:id", async (req, res) => {
-  const id = req.params.id;
-  await postModel.findByIdAndDelete({ _id: id });
+  try {
+    const id = req.params.id;
 
-  res.status(200).json({ message: "sucefully delte" });
+    const deletedPost = await postModel.findByIdAndDelete(id);
+
+    if (!deletedPost) {
+      return res.status(404).json({
+        message: "Post not found",
+      });
+    }
+
+    res.status(200).json({
+      message: "Post deleted successfully",
+      post: deletedPost,
+    });
+  } catch (error) {
+    console.error("Delete error:", error);
+
+    res.status(500).json({
+      message: "Failed to delete post",
+    });
+  }
 });
-app.patch("/api/posts/:id", async (req, res) => {
-  const id = req.params.id;
-  const desc = req.body.desc;
-  await postModel.findByIdAndUpdate({ _id: id }, { desc });
-  res.status(200).json({ message: "update" });
+app.put("/api/posts/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, desc } = req.body;
+
+    const post = await postModel.findByIdAndUpdate(
+      id,
+      { title, desc },
+      
+    );
+
+    if (!post) {
+      return res.status(404).json({ message: "Post not found" });
+    }
+
+    res.status(200).json({
+      message: "Post updated successfully",
+      post,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to update post" });
+  }
 });
 
 export default app;
